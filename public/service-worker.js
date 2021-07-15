@@ -1,4 +1,4 @@
-const CACHE_NAME = "static-cache-v2";
+const CACHE_NAME = "static-cache-v1";
 const DATA_CACHE_NAME = "data-cache-v1";
 
 const FILES_TO_CACHE = [
@@ -11,25 +11,18 @@ const FILES_TO_CACHE = [
     '/icons/icon-96x96.png',
 ];
 
-// install
-self.addEventListener("install", function (evt) {
-    // pre cache image data
-    evt.waitUntil(
-        caches.open(DATA_CACHE_NAME).then((cache) => cache.add("/api/images"))
+self.addEventListener("install", function (event) {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then(cache => {
+            console.log("adding data for caching" + CACHE_NAME);
+            return cache.addAll(FILES_TO_CACHE)
+        })
     );
-
-    // pre cache all static assets
-    evt.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
-    );
-
-    // tell the browser to activate this service worker immediately once it
-    // has finished installing
     self.skipWaiting();
 });
 
-self.addEventListener("activate", function (evt) {
-    evt.waitUntil(
+self.addEventListener("activate", function (event) {
+    event.waitUntil(
         caches.keys().then(keyList => {
             return Promise.all(
                 keyList.map(key => {
@@ -45,31 +38,31 @@ self.addEventListener("activate", function (evt) {
     self.clients.claim();
 });
 
-self.addEventListener('fetch', function (evt) {
-    if (evt.request.url.includes('/api/')) {
-        console.log('[Service Worker] Fetch (data)', evt.request.url);
-        evt.respondWith(
+self.addEventListener('fetch', function (event) {
+    if (event.request.url.includes('/api/')) {
+        console.log('[Service Worker] Fetch (data)', event.request.url);
+        event.respondWith(
             caches.open(DATA_CACHE_NAME).then(cache => {
-                return fetch(evt.request)
+                return fetch(event.request)
                     .then(response => {
                         if (response.status === 200) {
-                            cache.put(evt.request.url, response.clone());
+                            cache.put(event.request.url, response.clone());
                         }
                         return response;
                     })
                     .catch(error => {
                         console.log(error.message)
-                        return cache.match(evt.request)
+                        return cache.match(event.request)
                     });
             })
         );
         return;
     }
 
-    evt.respondWith(
+    event.respondWith(
         caches.open(CACHE_NAME).then(cache => {
-            return cache.match(evt.request).then(response => {
-                return response || fetch(evt.request);
+            return cache.match(event.request).then(response => {
+                return response || fetch(event.request);
             });
         })
     );
