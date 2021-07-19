@@ -10,8 +10,8 @@ const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/budget"
 
 const app = express();
 
-app.use(logger("dev"));
 
+app.use(logger("dev"));
 app.use(compression());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -25,7 +25,6 @@ mongoose.connect( MONGODB_URI, {
   useCreateIndex: true
 });
 
-// routes
 app.use(require("./routes/api.js"));
 
 app.listen(PORT, () => {
